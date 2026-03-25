@@ -1,22 +1,9 @@
 /**
- * controllers/userController.js – User Management Controller
- *
- * All routes here are protected by the authenticateToken middleware,
- * so req.user is always available and contains { id, username }.
- *
- * REST convention used:
- *   GET    /api/users        → getAllUsers   (list)
- *   GET    /api/users/:id    → getUserById   (single item)
- *   PUT    /api/users/:id    → updateUser    (replace fields)
- *   DELETE /api/users/:id    → deleteUser    (remove)
+ * controllers/userController.js – User Management Controller (extended)
  */
-
 const User = require('../models/userModel');
 
-/**
- * GET /api/users
- * Return every registered user (passwords excluded by the model).
- */
+/** GET /api/users – list all users (admin only). */
 const getAllUsers = async (req, res) => {
   try {
     const [users] = await User.getAll();
@@ -26,62 +13,49 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-/**
- * GET /api/users/:id
- * Return a single user by primary key.
- * Responds with 404 if the user does not exist.
- */
-const getUserById = async (req, res) => {
-  const userId = req.params.id;
+/** GET /api/users/me – return own profile from JWT. */
+const getMyProfile = async (req, res) => {
   try {
-    const [results] = await User.findById(userId);
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
+    const [rows] = await User.findById(req.user.id);
+    if (!rows.length) return res.status(404).json({ error: 'User not found.' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/** GET /api/users/:id */
+const getUserById = async (req, res) => {
+  try {
+    const [results] = await User.findById(req.params.id);
+    if (!results.length) return res.status(404).json({ error: 'User not found.' });
     res.json(results[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * PUT /api/users/:id
- * Update a user's username and/or email.
- * Body: { username, email }
- */
+/** PUT /api/users/:id – update username, email, full_name, phone_number. */
 const updateUser = async (req, res) => {
-  const userId = req.params.id;
-  const { username, email } = req.body;
-
-  // ── Input Validation ───────────────────────────────────────────────────────
-  if (!username || !email) {
-    return res.status(400).json({ error: 'username and email are required.' });
-  }
-
+  const { username, email, full_name, phone_number } = req.body;
+  if (!username || !email) return res.status(400).json({ error: 'username and email are required.' });
   try {
-    await User.update(userId, username, email);
+    await User.update(req.params.id, { username, fullName: full_name, email, phone: phone_number });
     res.json({ message: 'User updated successfully.' });
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: 'Username or email already in use.' });
-    }
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Username or email already in use.' });
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * DELETE /api/users/:id
- * Permanently remove a user.
- * The database CASCADE rule also removes their chapter enrolments.
- */
+/** DELETE /api/users/:id */
 const deleteUser = async (req, res) => {
-  const userId = req.params.id;
   try {
-    await User.delete(userId);
+    await User.delete(req.params.id);
     res.json({ message: 'User deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-module.exports = { getAllUsers, getUserById, updateUser, deleteUser };
+module.exports = { getAllUsers, getUserById, getMyProfile, updateUser, deleteUser };

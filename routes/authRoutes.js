@@ -1,24 +1,33 @@
 /**
- * routes/authRoutes.js – Authentication Routes
- *
- * These routes are PUBLIC – no token required.
- *
- * KEY CONCEPT – Express Router
- * express.Router() creates a mini-app that handles only its own routes.
- * We mount it in server.js with app.use('/api', authRoutes), so:
- *   router.post('/register')  becomes  POST /api/register
- *   router.post('/login')     becomes  POST /api/login
+ * routes/authRoutes.js – Public authentication routes
  */
-
 const express = require('express');
-const { register, login } = require('../controllers/authController');
+const rateLimit = require('express-rate-limit');
+const {
+    register, login, refresh, logout, forgotPassword, resetPassword,
+} = require('../controllers/authController');
 
 const router = express.Router();
 
-// POST /api/register – Create a new user account
-router.post('/register', register);
+// Strict rate limiter: max 10 login attempts per 15 min per IP
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-// POST /api/login – Authenticate and receive a JWT
-router.post('/login', login);
+// ── Routes ────────────────────────────────────────────────────────────────────
+router.post('/auth/register', register);
+router.post('/auth/login', loginLimiter, login);
+router.post('/auth/refresh', refresh);
+router.post('/auth/logout', logout);
+router.post('/auth/forgot-password', forgotPassword);
+router.post('/auth/reset-password', resetPassword);
+
+// ── Backwards-compat aliases (keep old routes working) ──────────────────────
+router.post('/register', register);
+router.post('/login', loginLimiter, login);
 
 module.exports = router;
