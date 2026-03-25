@@ -17,13 +17,13 @@ const notificationService = require('../services/notificationService');
 cron.schedule('* * * * *', async () => {
     try {
         const [slots] = await db.query(
-            `SELECT id FROM time_slots
+            `SELECT slot_id FROM time_slots
        WHERE is_active = 1
          AND slot_date = CURDATE()
          AND TIMESTAMPDIFF(MINUTE, CONCAT(slot_date,' ',end_time), NOW()) >= 15`
         );
         for (const slot of slots) {
-            await Appointment.markNoShows(slot.id);
+            await Appointment.markNoShows(slot.slot_id);
         }
     } catch (err) {
         console.error('[cron no-show]', err.message);
@@ -43,7 +43,7 @@ cron.schedule('0 8 * * *', async () => {
               t.slot_date, t.start_time, t.end_time
        FROM appointments a
        JOIN users u ON u.id = a.student_id
-       JOIN time_slots t ON t.id = a.slot_id
+       JOIN time_slots t ON t.slot_id = a.slot_id
        WHERE t.slot_date = ? AND a.status = 'PENDING'`,
             [dateStr]
         );
@@ -69,7 +69,7 @@ cron.schedule('0 * * * *', async () => {
               t.slot_date, t.start_time, t.end_time
        FROM appointments a
        JOIN users u ON u.id = a.student_id
-       JOIN time_slots t ON t.id = a.slot_id
+       JOIN time_slots t ON t.slot_id = a.slot_id
        WHERE t.slot_date = CURDATE()
          AND a.status = 'PENDING'
          AND TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(t.slot_date,' ',t.start_time)) BETWEEN 55 AND 65`

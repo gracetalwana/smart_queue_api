@@ -15,10 +15,10 @@ const getCounters = async (_req, res) => {
 
 /** POST /api/counters – admin creates a new counter. */
 const createCounter = async (req, res) => {
-    const { name, description } = req.body;
+    const { name, service_type } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'name is required.' });
     try {
-        const [result] = await Counter.create(name.trim(), description || null);
+        const [result] = await Counter.create(name.trim(), service_type || 'accounts');
         const [rows] = await Counter.findById(result.insertId);
         res.status(201).json(rows[0]);
     } catch (err) {
