@@ -1,5 +1,32 @@
 /**
- * middleware/authMiddleware.js – JWT Authentication + RBAC Guards
+ * middleware/authMiddleware.js – JWT Authentication + Role-Based Access Control (RBAC)
+ *
+ * KEY CONCEPT – Middleware
+ * Middleware is a function that sits between the incoming request and your
+ * route handler.  Express calls middleware in the ORDER they are listed:
+ *
+ *   router.post('/slots', authenticateToken, requireRole('ADMIN'), createSlot);
+ *                          ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^
+ *                          middleware #1     middleware #2         handler
+ *
+ * If middleware calls next(), Express moves to the next function in the chain.
+ * If middleware sends a response (res.json/res.status), the chain STOPS.
+ *
+ * KEY CONCEPT – JWT (JSON Web Token)
+ * A JWT is a compact string with 3 parts separated by dots:
+ *   header.payload.signature
+ *
+ * The server creates a JWT on login (jwt.sign).
+ * The client sends the JWT with every request in the Authorization header:
+ *   Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+ *
+ * The server verifies the JWT (jwt.verify) to confirm the user is authentic
+ * and has not tampered with the token.
+ *
+ * KEY CONCEPT – RBAC (Role-Based Access Control)
+ * Each user has a role (STUDENT, ADMIN, SUPER_ADMIN).
+ * requireRole() checks if the user's role is in the allowed list.
+ * This way, students can't access admin-only endpoints.
  */
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');

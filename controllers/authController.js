@@ -1,13 +1,27 @@
 /**
- * controllers/authController.js – Authentication Controller (extended)
+ * controllers/authController.js – Authentication Controller
+ *
+ * This controller handles everything related to user authentication:
+ * registering, logging in, refreshing tokens, and resetting passwords.
+ *
+ * KEY CONCEPT – Password Hashing (bcrypt)
+ * We NEVER store plain-text passwords.  bcrypt.hash() turns "Admin@1234"
+ * into "$2b$10$xK..." (a one-way hash).  On login, bcrypt.compare()
+ * checks if the entered password matches the stored hash.
+ *
+ * KEY CONCEPT – Access + Refresh Tokens
+ * - Access token:  short-lived (15 min).  Sent with every API request.
+ * - Refresh token: long-lived (7 days).  Used ONLY to get a new access token.
+ * Why two tokens?  If an access token is stolen, it expires quickly.
+ * The refresh token is used less frequently and can be revoked.
  *
  * Endpoints:
- *   POST /api/auth/register       – student self-registration
- *   POST /api/auth/login          – login → access + refresh tokens
- *   POST /api/auth/refresh        – swap refresh token for new access token
- *   POST /api/auth/logout         – invalidate refresh token
- *   POST /api/auth/forgot-password – send OTP to email
- *   POST /api/auth/reset-password  – verify OTP + set new password
+ *   POST /api/register       – student self-registration
+ *   POST /api/login          – login → access + refresh tokens
+ *   POST /api/refresh-token  – swap refresh token for new access token
+ *   POST /api/logout         – invalidate refresh token
+ *   POST /api/forgot-password – send OTP to email
+ *   POST /api/reset-password  – verify OTP + set new password
  */
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');

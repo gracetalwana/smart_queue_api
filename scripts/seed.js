@@ -1,7 +1,24 @@
 /**
- * scripts/seed.js – Database schema migration + seed data
+ * scripts/seed.js – Database Schema Migration + Seed Data
+ *
  * Run with:  npm run seed
- * Idempotent – safe to run multiple times.
+ *
+ * This script is the FIRST thing you run after installing dependencies.
+ * It connects to MySQL and:
+ *   1. Creates all 5 tables (users, counters, time_slots, appointments, notifications)
+ *   2. Adds any new columns to existing tables (ALTER TABLE ... ADD COLUMN IF NOT EXISTS)
+ *   3. Inserts sample data (5 users, 3 counters, 1 example time slot)
+ *
+ * KEY CONCEPT – Idempotent Migrations
+ * "Idempotent" means you can run this script as many times as you want
+ * without errors or duplicate data.  We use:
+ *   - CREATE TABLE IF NOT EXISTS  → won't fail if table already exists
+ *   - ALTER TABLE ... ADD COLUMN IF NOT EXISTS → won't add duplicate columns
+ *   - INSERT IGNORE → won't duplicate rows if username/email already exists
+ *
+ * KEY CONCEPT – Password Hashing Before Insertion
+ * We hash all seed passwords with bcrypt before inserting them.
+ * This mirrors what happens in the register endpoint.
  */
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
