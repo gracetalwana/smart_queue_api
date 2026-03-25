@@ -10,6 +10,7 @@ const createSchema = Joi.object({
     start_time: Joi.string().required(),
     end_time: Joi.string().required(),
     max_capacity: Joi.number().integer().min(1).max(500).default(10),
+    description: Joi.string().allow('', null).optional(),
 });
 
 /** POST /api/slots – admin creates a slot. */
