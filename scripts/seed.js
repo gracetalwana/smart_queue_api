@@ -52,36 +52,6 @@ async function seed() {
   for (const cmd of userAlters) { await db.execute(cmd).catch(() => { }); }
   console.log('✔  Table: users');
 
-  // ── CHAPTERS ───────────────────────────────────────────────────────────────
-
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS chapters (
-      id           INT AUTO_INCREMENT PRIMARY KEY,
-      name         VARCHAR(150) NOT NULL,
-      description  TEXT,
-      chapter_type ENUM('lecture','lab','tutorial','seminar','workshop') DEFAULT 'lecture',
-      status       ENUM('active','archived') DEFAULT 'active',
-      created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await db.execute(`
-    ALTER TABLE chapters
-      ADD COLUMN IF NOT EXISTS chapter_type ENUM('lecture','lab','tutorial','seminar','workshop') DEFAULT 'lecture',
-      ADD COLUMN IF NOT EXISTS status       ENUM('active','archived') DEFAULT 'active'
-  `).catch(() => { });
-  console.log('✔  Table: chapters');
-
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS user_chapters (
-      user_id    INT NOT NULL,
-      chapter_id INT NOT NULL,
-      PRIMARY KEY (user_id, chapter_id),
-      FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
-      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-    )
-  `);
-  console.log('✔  Table: user_chapters');
-
   // ── COUNTERS ───────────────────────────────────────────────────────────────
 
   await db.execute(`
@@ -178,39 +148,6 @@ async function seed() {
     );
   }
   console.log(`✔  Seeded ${seedUsers.length} users`);
-
-  // ── SEED CHAPTERS ──────────────────────────────────────────────────────────
-
-  const chapters = [
-    { name: 'Introduction to Node.js', desc: 'Fundamentals of Node.js runtime.', type: 'lecture', st: 'active' },
-    { name: 'Express.js Basics', desc: 'Building RESTful APIs with Express.', type: 'lecture', st: 'active' },
-    { name: 'MySQL & Relational DBs', desc: 'Database design, SQL queries, and joins.', type: 'lab', st: 'active' },
-    { name: 'Authentication & JWT', desc: 'User auth with bcrypt and JWTs.', type: 'tutorial', st: 'active' },
-    { name: 'Deployment & DevOps', desc: 'Docker and cloud deployment.', type: 'workshop', st: 'active' },
-    { name: 'React Fundamentals', desc: 'Components, props, state, and hooks.', type: 'lecture', st: 'active' },
-    { name: 'REST API Design', desc: 'Best practices for clean REST APIs.', type: 'seminar', st: 'active' },
-    { name: 'SQL Lab: Joins & Indexes', desc: 'Hands-on SQL with joins and sub-queries.', type: 'lab', st: 'archived' },
-  ];
-  for (const c of chapters) {
-    await db.execute(
-      'INSERT IGNORE INTO chapters (name, description, chapter_type, status) VALUES (?, ?, ?, ?)',
-      [c.name, c.desc, c.type, c.st]
-    );
-  }
-  console.log(`✔  Seeded ${chapters.length} chapters`);
-
-  const [allUsers] = await db.execute('SELECT id FROM users    ORDER BY id');
-  const [allChapters] = await db.execute('SELECT id FROM chapters ORDER BY id');
-  const assignments = [[0, 0], [0, 1], [0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 0], [3, 1], [3, 2], [3, 3], [3, 4]];
-  let assigned = 0;
-  for (const [ui, ci] of assignments) {
-    if (allUsers[ui] && allChapters[ci]) {
-      await db.execute('INSERT IGNORE INTO user_chapters (user_id, chapter_id) VALUES (?, ?)',
-        [allUsers[ui].id, allChapters[ci].id]);
-      assigned++;
-    }
-  }
-  console.log(`✔  Assigned users to chapters (${assigned} memberships)`);
 
   // ── SEED COUNTERS ──────────────────────────────────────────────────────────
 

@@ -1,247 +1,122 @@
-# **Express.js with MySQL: Authentication, CRUD, and Association Chapters**
+# Smart Queue API
 
-This project is a comprehensive example of building a RESTful API using **Express.js** and **MySQL**. It includes features like **user authentication**, **CRUD operations for users**, and **association chapters** (e.g., Robotics Chapter, Gaming Chapter, etc.). This project is designed to help students learn Express.js, MySQL, and REST API development in a structured and modular way.
+RESTful API backend for the **UCU Smart Queuing System** — a real-time appointment and queue management platform built for Uganda Christian University.
 
----
+## Tech Stack
 
-## **Features**
-1. **User Authentication**:
-   - Register a new user.
-   - Login and generate a JWT token.
-   - Protected routes using JWT authentication.
+- **Runtime**: Node.js + Express 4
+- **Database**: MySQL via `mysql2` (connection pool)
+- **Auth**: bcryptjs + JWT (access + refresh tokens)
+- **Real-time**: Socket.IO
+- **Validation**: Joi
+- **Scheduling**: node-cron (no-show marking, reminders)
 
-2. **User CRUD Operations**:
-   - Create, read, update, and delete users.
+## Features
 
-3. **Association Chapters**:
-   - Create, read, update, and delete chapters.
-   - Add users to chapters.
-   - Retrieve all users in a specific chapter.
+1. **Authentication** — Register, login, refresh tokens, OTP-ready
+2. **User Management** — CRUD with role-based access (STUDENT, ADMIN, SUPER_ADMIN)
+3. **Time Slots** — Admins create bookable time windows per counter
+4. **Appointments** — Students book slots, get queue numbers, track status
+5. **Counters** — Service desks that process queued students
+6. **Notifications** — In-app notification system (email/SMS ready)
+7. **Real-time Updates** — Socket.IO pushes queue changes to clients
+8. **Cron Jobs** — Auto-mark no-shows, send reminders
 
-4. **Modular Code Structure**:
-   - Organized into separate files and folders for better maintainability.
+## Project Structure
 
----
-
-## **Technologies Used**
-- **Backend**: Node.js, Express.js
-- **Database**: MySQL
-- **Authentication**: JSON Web Tokens (JWT)
-- **Password Hashing**: bcryptjs
-- **Environment Variables**: dotenv
-- **Development Tool**: Nodemon
-
----
-
-## **Project Structure**
 ```
-express-mysql-app/
-├── .env
-├── package.json
-├── server.js
+smart_queue_api/
+├── server.js              # Express app, Socket.IO, cron init
 ├── config/
-│   └── db.js
-├── controllers/
+│   └── db.js              # MySQL connection pool
+├── controllers/           # Route handlers
 │   ├── authController.js
 │   ├── userController.js
-│   └── chapterController.js
+│   ├── slotController.js
+│   ├── appointmentController.js
+│   ├── counterController.js
+│   └── notificationController.js
+├── models/                # Data access layer
+├── routes/                # Express routers
 ├── middleware/
-│   └── authMiddleware.js
-├── routes/
-│   ├── authRoutes.js
-│   ├── userRoutes.js
-│   └── chapterRoutes.js
-└── models/
-    ├── userModel.js
-    └── chapterModel.js
+│   └── authMiddleware.js  # JWT verify, role guard
+├── services/              # Business logic (queue, notifications, cron)
+├── scripts/
+│   └── seed.js            # DB schema + seed data
+└── tests/
 ```
 
----
+## Getting Started
 
-## **Setup Instructions**
-
-### **1. Prerequisites**
-- Install [Node.js](https://nodejs.org/) (v16 or higher).
-- Install [MySQL](https://dev.mysql.com/downloads/installer/).
-- Install a REST client like [Postman](https://www.postman.com/downloads/) or use `curl` for testing.
-
-### **2. Clone the Repository**
 ```bash
-git clone https://github.com/musasizi/express-mysql-app.git
-cd express-mysql-app
-```
-
-### **3. Install Dependencies**
-```bash
+# 1. Install dependencies
 npm install
+
+# 2. Create .env
+cp .env.example .env
+# Edit DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE, JWT_SECRET, etc.
+
+# 3. Seed the database
+npm run seed
+
+# 4. Start the server
+npm start          # or: npm run dev (nodemon)
 ```
 
-### **4. Set Up the Database**
-1. Log in to MySQL:
-   ```bash
-   mysql -u root -p
-   ```
+**Default credentials (from seed):**
 
-2. Create the database and tables:
-   ```sql
-   CREATE DATABASE express_auth;
-   USE express_auth;
+| Role        | Username    | Password     |
+|-------------|-------------|--------------|
+| SUPER_ADMIN | superadmin  | Admin@1234   |
+| ADMIN       | admin1      | Admin@1234   |
+| STUDENT     | alice       | Student@123  |
+| STUDENT     | bob         | Student@123  |
+| STUDENT     | charlie     | Student@123  |
 
-   CREATE TABLE users (
-     id INT AUTO_INCREMENT PRIMARY KEY,
-     username VARCHAR(255) NOT NULL UNIQUE,
-     password VARCHAR(255) NOT NULL,
-     email VARCHAR(255) NOT NULL UNIQUE,
-     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
+## API Endpoints
 
-   CREATE TABLE chapters (
-     id INT AUTO_INCREMENT PRIMARY KEY,
-     name VARCHAR(255) NOT NULL UNIQUE,
-     description TEXT,
-     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
+### Auth
+- `POST /api/register` — Register a new user
+- `POST /api/login` — Login, receive access + refresh tokens
+- `POST /api/refresh-token` — Refresh access token
 
-   CREATE TABLE user_chapters (
-     user_id INT,
-     chapter_id INT,
-     PRIMARY KEY (user_id, chapter_id),
-     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-     FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-   );
-   ```
+### Users
+- `GET /api/users` — List all users (admin)
+- `GET /api/users/:id` — Get user by ID
+- `PUT /api/users/:id` — Update user
+- `DELETE /api/users/:id` — Delete user (admin)
 
-### **5. Configure Environment Variables**
-Create a `.env` file in the root directory and add the following:
-```
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_DATABASE=express_auth
-JWT_SECRET=yourjwtsecretkey
-PORT=3000
-```
+### Time Slots
+- `GET /api/slots` — List slots
+- `POST /api/slots` — Create slot (admin)
+- `PUT /api/slots/:id` — Update slot (admin)
+- `DELETE /api/slots/:id` — Delete slot (admin)
 
-### **6. Run the Application**
-```bash
-npm start
-```
+### Appointments
+- `GET /api/appointments` — List all appointments (admin)
+- `GET /api/appointments/my` — Student's own appointments
+- `GET /api/appointments/stats` — Queue statistics (admin)
+- `POST /api/appointments` — Book an appointment
+- `PATCH /api/appointments/:id/serve` — Mark as serving
+- `PATCH /api/appointments/:id/complete` — Mark as served
+- `PATCH /api/appointments/:id/cancel` — Cancel appointment
 
-The server will start on `http://localhost:3000`.
+### Counters
+- `GET /api/counters` — List counters
+- `POST /api/counters` — Create counter (admin)
 
----
+### Notifications
+- `GET /api/notifications` — User's notifications
+- `PATCH /api/notifications/:id/read` — Mark as read
 
-## **API Endpoints**
+## Environment Variables
 
-### **Authentication**
-- **Register a User**: `POST /api/register`
-  ```json
-  {
-    "username": "john_doe",
-    "password": "password123",
-    "email": "john@example.com"
-  }
-  ```
-
-- **Login**: `POST /api/login`
-  ```json
-  {
-    "username": "john_doe",
-    "password": "password123"
-  }
-  ```
-
-### **Users**
-- **Get All Users**: `GET /api/users` (Protected)
-- **Update a User**: `PUT /api/users/:id` (Protected)
-- **Delete a User**: `DELETE /api/users/:id` (Protected)
-
-### **Chapters**
-- **Create a Chapter**: `POST /api/chapters` (Protected)
-  ```json
-  {
-    "name": "Robotics Chapter",
-    "description": "A chapter for robotics enthusiasts."
-  }
-  ```
-
-- **Get All Chapters**: `GET /api/chapters`
-- **Get Chapter by ID**: `GET /api/chapters/:id`
-- **Update a Chapter**: `PUT /api/chapters/:id` (Protected)
-- **Delete a Chapter**: `DELETE /api/chapters/:id` (Protected)
-- **Add User to Chapter**: `POST /api/chapters/add-user` (Protected)
-  ```json
-  {
-    "userId": 1,
-    "chapterId": 1
-  }
-  ```
-
-- **Get Users in a Chapter**: `GET /api/chapters/:id/users` (Protected)
-
----
-
-## **Testing the API**
-Use a tool like **Postman** or **cURL** to test the endpoints. Here are some examples:
-
-### **Register a User**
-```bash
-curl -X POST http://localhost:3000/api/register \
--H "Content-Type: application/json" \
--d '{
-  "username": "john_doe",
-  "password": "password123",
-  "email": "john@example.com"
-}'
-```
-
-### **Login**
-```bash
-curl -X POST http://localhost:3000/api/login \
--H "Content-Type: application/json" \
--d '{
-  "username": "john_doe",
-  "password": "password123"
-}'
-```
-
-### **Get All Users (Protected)**
-```bash
-curl -X GET http://localhost:3000/api/users \
--H "Authorization: Bearer <token>"
-```
-
----
-
-## **Learning Objectives**
-1. **Express.js Basics**:
-   - Routing, middleware, and request handling.
-2. **MySQL Integration**:
-   - Connecting to MySQL, executing queries, and managing relationships.
-3. **Authentication**:
-   - Implementing JWT-based authentication.
-4. **Modular Code Structure**:
-   - Organizing code into controllers, models, and routes.
-5. **REST API Design**:
-   - Designing and implementing RESTful endpoints.
-
----
-
-## **Contributing**
-Feel free to contribute to this project by opening issues or submitting pull requests. Your feedback and improvements are welcome!
-
----
-
-## **License**
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-
-## **Author**
-[MUSASIZI KENNETH]
-[github.com/musasizi]
-[kennymusasizi@gmail.com]
-
----
-
-Happy Coding! 🚀
+| Variable       | Description                  |
+|----------------|------------------------------|
+| DB_HOST        | MySQL host                   |
+| DB_USER        | MySQL username               |
+| DB_PASSWORD    | MySQL password               |
+| DB_DATABASE    | Database name (smart_queue_db) |
+| DB_PORT        | MySQL port (3306)            |
+| JWT_SECRET     | Secret for signing JWTs      |
+| PORT           | Server port (default 3000)   |

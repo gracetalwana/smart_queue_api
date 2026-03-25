@@ -1,8 +1,8 @@
 {
-  "name": "express-mysql-app",
+  "name": "smart-queue-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "UCU Smart Queuing System API",
+  "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
     "seed": "node scripts/seed.js",

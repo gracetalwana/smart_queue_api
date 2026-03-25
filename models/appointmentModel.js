@@ -110,6 +110,59 @@ const Appointment = {
             [slotId]
         );
     },
+
+    /**
+     * Aggregate statistics for the admin dashboard / reports.
+     * Returns counts by status, by reason, by date, totals, and recent appointments.
+     */
+    getStats: async () => {
+        const [byStatus] = await db.query(
+            `SELECT status, COUNT(*) AS count FROM appointments WHERE is_deleted = 0 GROUP BY status`
+        );
+
+        const [todayByStatus] = await db.query(
+            `SELECT status, COUNT(*) AS count FROM appointments
+             WHERE DATE(booked_at) = CURDATE() AND is_deleted = 0 GROUP BY status`
+        );
+
+        const [byReason] = await db.query(
+            `SELECT reason, COUNT(*) AS count FROM appointments WHERE is_deleted = 0 GROUP BY reason ORDER BY count DESC`
+        );
+
+        const [dailyVolume] = await db.query(
+            `SELECT DATE(booked_at) AS date, COUNT(*) AS count
+             FROM appointments WHERE is_deleted = 0
+             GROUP BY DATE(booked_at) ORDER BY date DESC LIMIT 14`
+        );
+
+        const [totals] = await db.query(
+            `SELECT
+               (SELECT COUNT(*) FROM appointments WHERE is_deleted = 0) AS totalAppointments,
+               (SELECT COUNT(*) FROM appointments WHERE DATE(booked_at) = CURDATE() AND is_deleted = 0) AS todayTotal,
+               (SELECT COUNT(*) FROM users) AS totalUsers,
+               (SELECT COUNT(*) FROM counters WHERE is_active = 1) AS activeCounters,
+               (SELECT COUNT(*) FROM time_slots WHERE slot_date >= CURDATE()) AS upcomingSlots`
+        );
+
+        const [recent] = await db.query(
+            `SELECT a.appointment_id, a.queue_number, a.status, a.reason, a.booked_at,
+                    u.username, u.full_name, ts.slot_date, ts.start_time, ts.end_time
+             FROM   appointments a
+             JOIN   users u      ON u.id       = a.student_id
+             JOIN   time_slots ts ON ts.slot_id = a.slot_id
+             WHERE  a.is_deleted = 0
+             ORDER BY a.booked_at DESC LIMIT 10`
+        );
+
+        return {
+            byStatus,
+            todayByStatus,
+            byReason,
+            dailyVolume: dailyVolume.reverse(),
+            ...totals[0],
+            recent,
+        };
+    },
 };
 
 module.exports = Appointment;

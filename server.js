@@ -20,7 +20,6 @@ dotenv.config();
 // ─── Route imports ────────────────────────────────────────────────────────────
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const chapterRoutes = require('./routes/chapterRoutes');
 const slotRoutes = require('./routes/slotRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -62,7 +61,6 @@ app.get('/', (_req, res) => {
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
-app.use('/api', chapterRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/notifications', notificationRoutes);

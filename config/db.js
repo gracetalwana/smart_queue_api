@@ -22,7 +22,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST,     // e.g. 'localhost'
   user: process.env.DB_USER,     // e.g. 'root'
   password: process.env.DB_PASSWORD, // keep this secret!
-  database: process.env.DB_DATABASE, // e.g. 'academia_db'
+  database: process.env.DB_DATABASE, // e.g. 'smart_queue_db'
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,  // queue requests instead of throwing instantly
   connectionLimit: 10,    // max simultaneous connections in the pool

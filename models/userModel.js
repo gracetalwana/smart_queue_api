@@ -40,7 +40,7 @@ const User = {
     return db.query(sql, [username, fullName, email, phone, id]);
   },
 
-  /** Hard delete (admin-only; cascades user_chapters). */
+  /** Hard delete (admin-only). */
   delete: (id) => db.query('DELETE FROM users WHERE id = ?', [id]),
 
   /** Save refresh token hash. */

@@ -107,7 +107,18 @@ const markServing = async (req, res) => {
     }
 };
 
+/** GET /api/appointments/stats – admin: aggregate queue statistics. */
+const getStats = async (_req, res) => {
+    try {
+        const stats = await Appointment.getStats();
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     bookAppointment, getAppointment, getMyAppointments,
     getAppointmentsBySlot, cancelAppointment, markServed, markNoShow, markServing,
+    getStats,
 };
