@@ -14,4 +14,12 @@ router.get('/users/:id', authenticateToken, getUserById);
 router.put('/users/:id', authenticateToken, updateUser);
 router.delete('/users/:id', authenticateToken, requireRole('ADMIN', 'SUPER_ADMIN'), deleteUser);
 
+const { getStudentUsageReport } = require('../controllers/userController');
+
+router.get(
+  '/reports/student-usage',
+  authenticateToken,
+  requireRole('ADMIN'),
+  getStudentUsageReport
+);
 module.exports = router;

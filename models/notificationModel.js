@@ -4,48 +4,64 @@
 const db = require('../config/db');
 
 const Notification = {
-    /** Create a new notification record. */
+
+    /** Create a new notification record */
     create: (userId, appointmentId, type, channel, message) => {
         const sql = `
-      INSERT INTO notifications (user_id, appointment_id, type, channel, message)
-      VALUES (?, ?, ?, ?, ?)
-    `;
-        return db.query(sql, [userId, appointmentId, type, channel, message]);
+            INSERT INTO notifications 
+            (user_id, appointment_id, type, channel, message)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        return db.query(sql, [
+            userId,
+            appointmentId,
+            type,
+            channel,
+            message
+        ]);
     },
 
-    /** Get all notifications for a user (newest first). */
+    /** Get all notifications for a user (newest first) */
     getByUser: (userId) => {
         const sql = `
-      SELECT * FROM notifications
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-    `;
+            SELECT *
+            FROM notifications
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        `;
         return db.query(sql, [userId]);
     },
 
-    /** Mark a single notification as read. */
+    /** Mark one notification as read */
     markRead: (notificationId) => {
-        return db.query(
-            'UPDATE notifications SET is_read = 1 WHERE notification_id = ?',
-            [notificationId]
-        );
+        const sql = `
+            UPDATE notifications
+            SET is_read = 1
+            WHERE notification_id = ?
+        `;
+        return db.query(sql, [notificationId]);
     },
 
-    /** Mark all in-app notifications for a user as read. */
+    /** Mark all notifications as read (IN_APP only) */
     markAllRead: (userId) => {
-        return db.query(
-            `UPDATE notifications SET is_read = 1 WHERE user_id = ? AND channel = 'IN_APP'`,
-            [userId]
-        );
+        const sql = `
+            UPDATE notifications
+            SET is_read = 1
+            WHERE user_id = ?
+            AND channel = 'IN_APP'
+        `;
+        return db.query(sql, [userId]);
     },
 
-    /** Update delivery status (SENT / FAILED) and set sent_at timestamp. */
+    /** Update delivery status */
     updateStatus: (notificationId, status) => {
-        return db.query(
-            `UPDATE notifications SET status = ?, sent_at = NOW() WHERE notification_id = ?`,
-            [status, notificationId]
-        );
-    },
+        const sql = `
+            UPDATE notifications
+            SET status = ?, sent_at = NOW()
+            WHERE notification_id = ?
+        `;
+        return db.query(sql, [status, notificationId]);
+    }
 };
 
 module.exports = Notification;
