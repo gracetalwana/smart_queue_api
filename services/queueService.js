@@ -23,13 +23,19 @@ const AVG_SERVICE_MINUTES = Number(process.env.AVG_SERVICE_MINUTES) || 5;
  * @returns {Promise<string>}
  */
 async function generateQueueNumber(conn, slotId, dateStr) {
+    // Uses the same conn that holds the FOR UPDATE lock on time_slots,
+    // so concurrent bookings cannot both read the same maxIdx.
     const [[{ maxIdx }]] = await conn.execute(
         `SELECT MAX(CAST(SUBSTRING_INDEX(queue_number, '-', -1) AS UNSIGNED)) AS maxIdx
-     FROM appointments
-     WHERE slot_id = ? AND DATE(booked_at) = ?`,
+         FROM   appointments
+         WHERE  slot_id    = ?
+           AND  DATE(booked_at) = ?
+           AND  is_deleted = 0
+           AND  status NOT IN ('CANCELLED', 'NO_SHOW')`,
         [slotId, dateStr]
     );
-    const next = (maxIdx ?? 0) + 1;
+
+    const next = (maxIdx === null ? 0 : maxIdx) + 1;
     return `Q-${String(next).padStart(3, '0')}`;
 }
 
