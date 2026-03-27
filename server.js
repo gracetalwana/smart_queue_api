@@ -8,6 +8,7 @@
  *  4. Starts the HTTP server and cron jobs
  */
 
+
 const http = require('http');
 const express = require('express');
 const dotenv = require('dotenv');
@@ -53,6 +54,8 @@ io.on('connection', (socket) => {
 app.use(express.json());
 app.use(cors());
 
+app.use('/api/reports', reportRoutes);
+
 // ─── Health-Check Route ───────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.json({ message: 'Smart Queue API is running 🚀', status: 'ok' });
@@ -84,4 +87,6 @@ server.listen(PORT, () => {
   console.log(`Smart Queue API running on port ${PORT}`);
   // Start scheduled jobs after the server is up
   require('./jobs/cronJobs');
+
+
 });

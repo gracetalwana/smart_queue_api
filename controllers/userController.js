@@ -58,4 +58,48 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, getUserById, getMyProfile, updateUser, deleteUser };
+/** GET /api/reports/student-usage */
+const getStudentUsageReport = async (req, res) => {
+  try {
+    // 1. Total registered students
+    const [totalUsersResult] = await User.getAll();
+    const totalStudents = totalUsersResult.filter(
+      u => u.role === 'STUDENT'
+    ).length;
+
+    // 2. Daily active users (students who made appointments today)
+    const [activeToday] = await db.query(`
+      SELECT COUNT(DISTINCT student_id) AS activeCount
+      FROM appointments
+      WHERE DATE(booked_at) = CURDATE()
+    `);
+
+    // 3. Optional: last 7 days activity for graph
+    const [weeklyActivity] = await db.query(`
+      SELECT DATE(booked_at) AS date,
+             COUNT(DISTINCT student_id) AS activeStudents
+      FROM appointments
+      WHERE booked_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      GROUP BY DATE(booked_at)
+      ORDER BY date ASC
+    `);
+
+    res.json({
+      totalStudents,
+      activeToday: activeToday[0].activeCount,
+      weeklyActivity
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  getAllUsers,
+  getUserById,
+  getMyProfile,
+  updateUser,
+  deleteUser,
+  getStudentUsageReport
+};
