@@ -14,6 +14,11 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { Server } = require('socket.io');
+const router = express.Router();
+
+router.get('/notifications', (req, res) => { 
+  res.send('Hello from notifications');
+});
 
 // Load environment variables from the .env file into process.env
 dotenv.config();
